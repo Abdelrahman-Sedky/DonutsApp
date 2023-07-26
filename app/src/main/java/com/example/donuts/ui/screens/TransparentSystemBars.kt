@@ -14,6 +14,7 @@ fun TransparentSystemBars() {
     LaunchedEffect(systemUiController, useDarkIcons) {
         systemUiController.setSystemBarsColor(
             color = Color.Transparent,
+            darkIcons = true
         )
     }
 }

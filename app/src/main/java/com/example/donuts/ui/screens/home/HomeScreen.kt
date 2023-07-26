@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -36,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
@@ -61,8 +61,12 @@ fun HomeScreen(
     HomeContent(
         state = state.value,
         onItemClick = { id ->
-            navController.navigateToDetails(id)
-        }
+            navController.navigateToDetails(
+                id,
+                state.value.todayOffer.find { it.id == id }!!.isLiked
+            )
+        },
+        onLikeClick = viewModel::likeDonut
     )
 }
 
@@ -70,7 +74,8 @@ fun HomeScreen(
 @Composable
 fun HomeContent(
     state: HomeUiState,
-    onItemClick: (Int) -> Unit
+    onItemClick: (Int) -> Unit,
+    onLikeClick: (Int) -> Unit
 ) {
     Scaffold(
         modifier = Modifier,
@@ -106,8 +111,9 @@ fun HomeContent(
 
             TodayOffers(
                 todayOffers = state.todayOffer,
-                onClick = onItemClick ,
-                contentPadding = PaddingValues(horizontal = 40.dp)
+                onClick = onItemClick,
+                contentPadding = PaddingValues(horizontal = 40.dp),
+                onLikeClick = onLikeClick
             )
 
             Spacer(modifier = Modifier.height(46.dp))
@@ -134,12 +140,14 @@ fun HomeContent(
 
 @Composable
 fun BottomBar() {
-    BottomAppBar(containerColor = Color(0xFFF1F1F1)) {
+    BottomAppBar(
+        containerColor = Color(0xFFF1F1F1),
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(40.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             BottomBarItem(
@@ -154,6 +162,14 @@ fun BottomBar() {
                 isSelected = false,
                 onClick = { /*TODO*/ }
             )
+
+            BottomBarItem(
+                icon = R.drawable.notification,
+                text = "Cart",
+                isSelected = false,
+                onClick = { /*TODO*/ }
+            )
+
             BottomBarItem(
                 icon = R.drawable.buy,
                 text = "Profile",
@@ -228,6 +244,7 @@ fun Header(
 fun TodayOffers(
     todayOffers: List<HomeUiState.TodayOfferUiState>,
     onClick: (Int) -> Unit,
+    onLikeClick: (Int) -> Unit,
     contentPadding: PaddingValues
 ) {
     LazyRow(
@@ -237,10 +254,11 @@ fun TodayOffers(
         items(todayOffers, key = { it.id }) {
             TodayOffersItem(
                 todayOffer = it,
-                onClick = {onClick(it.id)},
+                onClick = { onClick(it.id) },
                 modifier = Modifier.padding(end = 64.dp),
                 color = if (it.id % 2 == 0) Color(0xFFD7E4F6)
-                else Color(0xFFFFC7D0)
+                else Color(0xFFFFC7D0),
+                onLikeClick = { onLikeClick(it.id) }
             )
         }
     }
@@ -250,6 +268,7 @@ fun TodayOffers(
 fun TodayOffersItem(
     todayOffer: HomeUiState.TodayOfferUiState,
     onClick: () -> Unit,
+    onLikeClick: () -> Unit,
     color: Color,
     modifier: Modifier = Modifier
 ) {
@@ -258,92 +277,92 @@ fun TodayOffersItem(
     Box(
         modifier = modifier
             .size(193.dp, 325.dp)
-            .background(color, shape = RoundedCornerShape(20.dp))
-            .clickable {
-                onClick()
-            }
     ) {
-        Box(
+
+        Column(
             modifier = Modifier
-                .wrapContentHeight()
-                .background(Color.Transparent)
+                .clip(RoundedCornerShape(20.dp))
+                .background(color)
+                .clickable { onClick() },
+            horizontalAlignment = Alignment.Start,
         ) {
-            Image(
+            IconButton(
+                onClick = onLikeClick,
                 modifier = Modifier
-                    .size(193.dp)
-                    .offset(x = 80.dp, y = 20.dp),
-                painter = painterResource(id = todayOffer.image),
-                contentDescription = "Donut",
+                    .padding(15.dp)
+                    .background(
+                        color = Color.White,
+                        shape = MaterialTheme.shapes.extraLarge
+                    )
+                    .size(35.dp)
+                    .clickable {
+                        onClick()
+                    },
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = customColors.primary
+                )
+            ) {
+                Icon(
+                    painter = painterResource(id = if (todayOffer.isLiked) R.drawable.filled_heart else R.drawable.ic_heart),
+                    contentDescription = "Search"
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(11f))
+
+            Text(
+                modifier = Modifier.padding(start = 20.dp),
+                text = todayOffer.name,
+                style = MaterialTheme.typography.titleSmall,
+                color = Color.Black,
             )
 
-            Column {
-                IconButton(
-                    onClick = { },
-                    modifier = Modifier
-                        .padding(15.dp)
-                        .background(
-                            color = Color.White,
-                            shape = MaterialTheme.shapes.extraLarge
-                        )
-                        .size(35.dp),
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = customColors.primary
-                    )
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_heart),
-                        contentDescription = "Search"
-                    )
-                }
+            Spacer(modifier = Modifier.size(8.dp))
 
-                Spacer(modifier = Modifier.weight(11f))
+            Text(
+                modifier = Modifier.padding(horizontal = 20.dp),
+                text = todayOffer.description,
+                style = MaterialTheme.typography.labelSmall,
+                color = customColors.onCard,
+            )
 
+            Spacer(modifier = Modifier.size(8.dp))
+
+            Row(
+                modifier = Modifier
+                    .padding(end = 15.dp, bottom = 15.dp)
+                    .align(
+                        Alignment.End
+                    ),
+                verticalAlignment = Alignment.Bottom,
+            ) {
                 Text(
-                    modifier = Modifier.padding(start = 20.dp),
-                    text = todayOffer.name,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color.Black,
-                )
-
-                Spacer(modifier = Modifier.size(8.dp))
-
-                Text(
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    text = todayOffer.description,
-                    style = MaterialTheme.typography.labelSmall,
+                    text = "$${todayOffer.oldPrice}",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        textDecoration = TextDecoration.LineThrough
+                    ),
                     color = customColors.onCard,
                 )
 
-                Spacer(modifier = Modifier.size(8.dp))
+                Spacer(modifier = Modifier.size(4.dp))
 
-                Row(
-                    modifier = Modifier
-                        .padding(end = 15.dp, bottom = 15.dp)
-                        .align(
-                            Alignment.End
-                        ),
-                    verticalAlignment = Alignment.Bottom,
-                ) {
-                    Text(
-                        text = "$${todayOffer.oldPrice}",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            textDecoration = TextDecoration.LineThrough
-                        ),
-                        color = customColors.onCard,
-                    )
-
-                    Spacer(modifier = Modifier.size(4.dp))
-
-                    Text(
-                        text = "$${todayOffer.price}",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontSize = 22.sp
-                        ),
-                        color = Color.Black,
-                    )
-                }
+                Text(
+                    text = "$${todayOffer.price}",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 22.sp
+                    ),
+                    color = Color.Black,
+                )
             }
         }
+
+        Image(
+            modifier = Modifier
+                .size(193.dp)
+                .offset(x = 80.dp, y = 20.dp),
+            painter = painterResource(id = todayOffer.image),
+            contentDescription = "Donut",
+        )
     }
 
 }

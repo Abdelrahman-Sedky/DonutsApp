@@ -16,10 +16,11 @@ class DetailsViewModel @Inject constructor(
     private val _state = MutableStateFlow(DetailsUiState())
     val state = _state.asStateFlow()
 
-    val id: Int = DetailsArgs(savedStateHandle).id
+    private val args = DetailsArgs(savedStateHandle)
+
 
     init {
-        getDonut(id)
+        getDonut(args.id)
     }
 
     private fun getDonut(id: Int) {
@@ -31,7 +32,22 @@ class DetailsViewModel @Inject constructor(
                 description = donuts.description,
                 image = donuts.image,
                 price = donuts.price,
+                isLiked = args.isLiked
             )
+        }
+    }
+
+    fun incrementQuantity() {
+        _state.update {
+            it.copy(
+                quantity = it.quantity + 1,
+            )
+        }
+    }
+
+    fun decrementQuantity() {
+        _state.update {
+            it.copy(quantity = it.quantity - 1)
         }
     }
 

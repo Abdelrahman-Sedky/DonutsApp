@@ -16,7 +16,6 @@ class HomeViewModel @Inject constructor() : ViewModel() {
     init {
         getData()
     }
-
     private fun getData() {
         _state.update {
             it.copy(
@@ -25,6 +24,20 @@ class HomeViewModel @Inject constructor() : ViewModel() {
             )
         }
 
+    }
+
+    fun likeDonut(id: Int) {
+        _state.update {
+            it.copy(
+                todayOffer = it.todayOffer.map { todayOffer ->
+                    if (todayOffer.id == id) {
+                        todayOffer.copy(isLiked = !todayOffer.isLiked)
+                    } else {
+                        todayOffer
+                    }
+                }
+            )
+        }
     }
 
     private fun getTodayOffer(): List<HomeUiState.TodayOfferUiState> {
